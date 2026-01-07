@@ -7,7 +7,14 @@ import { Resend } from "resend"
 import { eq } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 
-const resend = new Resend(process.env.RESEND_API_KEY!)
+// Lazy initialization of Resend to avoid build-time errors
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY is not set")
+  }
+  return new Resend(apiKey)
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(drizzleDb, {
@@ -94,6 +101,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
   const resetUrl = `${baseURL}/admin/reset-password?token=${token}`
   const emailFrom = process.env.EMAIL_FROM || "noreply@example.com"
   
+  const resend = getResend()
   await resend.emails.send({
     from: emailFrom,
     to: email,
@@ -106,6 +114,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
 export async function sendVerificationEmail(email: string, url: string) {
   const emailFrom = process.env.EMAIL_FROM || "noreply@example.com"
   
+  const resend = getResend()
   await resend.emails.send({
     from: emailFrom,
     to: email,
