@@ -92,14 +92,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
   },
-  secret: process.env.AUTH_SECRET || "change-this-secret-in-production",
+  secret: process.env.AUTH_SECRET,
 })
 
 // Helper function to send password reset email
 export async function sendPasswordResetEmail(email: string, token: string) {
   const baseURL = process.env.AUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
   const resetUrl = `${baseURL}/reset-password?token=${token}`
-  const emailFrom = process.env.EMAIL_FROM || "noreply@example.com"
+  const emailFrom = process.env.EMAIL_FROM!
   
   const resend = getResend()
   await resend.emails.send({
@@ -112,7 +112,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
 
 // Helper function to send verification email
 export async function sendVerificationEmail(email: string, url: string) {
-  const emailFrom = process.env.EMAIL_FROM || "noreply@example.com"
+  const emailFrom = process.env.EMAIL_FROM!
   
   const resend = getResend()
   await resend.emails.send({
