@@ -160,7 +160,8 @@ See `.env.example` for all required environment variables.
 - `BLOB_READ_WRITE_TOKEN` - Vercel Blob storage token (if using file uploads)
 - `NEXT_PUBLIC_SITE_NAME` - Your site name
 - `NEXT_PUBLIC_SITE_URL` - Your site URL
-
+- `NEXT_PUBLIC_BASE_URL` - Base URL for client-side auth (defaults to `http://localhost:3000`)
+- `AUTH_URL` - Auth base URL for server-side auth (defaults to `NEXT_PUBLIC_BASE_URL`)
 ## Customization
 
 1. **Update site metadata**: Edit `app/layout.tsx` to customize your site's metadata
@@ -187,6 +188,10 @@ This template works with any platform that supports Next.js:
 - AWS Amplify
 
 Make sure to set all required environment variables in your deployment platform.
+
+## Author
+
+Created by **David Solheim**
 
 ## License
 

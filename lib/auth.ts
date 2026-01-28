@@ -92,7 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: {
     strategy: "jwt",
   },
-  secret: process.env.AUTH_SECRET || process.env.BETTER_AUTH_SECRET || "change-this-secret-in-production",
+  secret: process.env.AUTH_SECRET || "change-this-secret-in-production",
 })
 
 // Helper function to send password reset email
