@@ -86,8 +86,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/admin/login",
-    error: "/admin/login",
+    signIn: "/login",
+    error: "/login",
   },
   session: {
     strategy: "jwt",
@@ -98,7 +98,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 // Helper function to send password reset email
 export async function sendPasswordResetEmail(email: string, token: string) {
   const baseURL = process.env.AUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  const resetUrl = `${baseURL}/admin/reset-password?token=${token}`
+  const resetUrl = `${baseURL}/reset-password?token=${token}`
   const emailFrom = process.env.EMAIL_FROM || "noreply@example.com"
   
   const resend = getResend()

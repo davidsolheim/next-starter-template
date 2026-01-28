@@ -59,7 +59,7 @@ function ResetPasswordForm() {
         setSuccess(true)
         // Redirect to login after 2 seconds
         setTimeout(() => {
-          router.push("/admin/login")
+          router.push("/login")
         }, 2000)
       }
     } catch (err) {
@@ -83,7 +83,7 @@ function ResetPasswordForm() {
               <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950 p-3 rounded-md">
                 Password reset successfully! Redirecting to login...
               </div>
-              <Link href="/admin/login">
+              <Link href="/login">
                 <Button variant="outline" className="w-full">
                   Go to Login
                 </Button>
@@ -132,7 +132,7 @@ function ResetPasswordForm() {
               </Button>
               <div className="text-center">
                 <Link
-                  href="/admin/login"
+                  href="/login"
                   className="text-sm text-primary hover:underline"
                 >
                   Back to Login

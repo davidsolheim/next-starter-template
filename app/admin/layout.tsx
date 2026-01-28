@@ -14,7 +14,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleSignOut = async () => {
     await signOut()
-    router.push("/admin/login")
+    router.push("/login")
   }
 
   if (isPending) {
