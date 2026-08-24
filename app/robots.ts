@@ -1,14 +1,20 @@
 import { MetadataRoute } from "next"
+import { getCanonicalSiteUrl, isSearchIndexingAllowed } from "@/lib/site-visibility"
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+  const siteUrl = getCanonicalSiteUrl()
+  if (!isSearchIndexingAllowed()) {
+    return {
+      rules: [{ userAgent: "*", disallow: "/" }],
+    }
+  }
 
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/admin/", "/api/"],
+        disallow: ["/admin/", "/api/", "/login", "/forgot-password", "/reset-password"],
       },
     ],
     sitemap: `${siteUrl}/sitemap.xml`,

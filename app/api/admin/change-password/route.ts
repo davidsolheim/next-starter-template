@@ -1,71 +1,48 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
-import { drizzleDb } from "@/lib/db"
+import { NextRequest } from "next/server"
+import { db } from "@/lib/db"
 import { users } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 import bcrypt from "bcryptjs"
+import { jsonError, jsonOk, parseJson, requireUserId } from "@/lib/api/helpers"
+import { z } from "zod"
+
+const bodySchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+})
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify the user is authenticated
-    const session = await auth()
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const userId = await requireUserId()
+    if (userId instanceof Response) return userId
 
-    const body = await request.json()
-    const { currentPassword, newPassword } = body
+    const parsed = await parseJson(request, bodySchema)
+    if (parsed instanceof Response) return parsed
 
-    // Validate input
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { error: "Current password and new password are required" },
-        { status: 400 }
-      )
-    }
-
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: "New password must be at least 8 characters long" },
-        { status: 400 }
-      )
-    }
-
-    // Get the user from the database
-    const userId = session.user.id || (session.user as any).sub
-    const userResult = await drizzleDb
+    const userResult = await db
       .select()
       .from(users)
       .where(eq(users.id, userId))
       .limit(1)
 
     if (userResult.length === 0) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+      return jsonError("User not found", 404)
     }
 
     const user = userResult[0]
 
-    // Verify the current password
     if (!user.password) {
-      return NextResponse.json(
-        { error: "User does not have a password set" },
-        { status: 400 }
-      )
+      return jsonError("User does not have a password set", 400)
     }
 
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password)
+    const isCurrentPasswordValid = await bcrypt.compare(parsed.currentPassword, user.password)
     if (!isCurrentPasswordValid) {
-      return NextResponse.json(
-        { error: "Current password is incorrect" },
-        { status: 400 }
-      )
+      return jsonError("Current password is incorrect", 400)
     }
 
-    // Hash the new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10)
+    const hashedNewPassword = await bcrypt.hash(parsed.newPassword, 10)
 
-    // Update the password in the database
-    await drizzleDb
+    await db
       .update(users)
       .set({
         password: hashedNewPassword,
@@ -73,16 +50,12 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(users.id, userId))
 
-    return NextResponse.json({
+    return jsonOk({
       success: true,
       message: "Password changed successfully",
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to change password:", error)
-    return NextResponse.json(
-      { error: error.message || "An error occurred while changing password" },
-      { status: 500 }
-    )
+    return jsonError("An error occurred while changing password", 500)
   }
 }
-

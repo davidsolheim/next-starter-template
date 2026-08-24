@@ -1,9 +1,4 @@
 import { defineConfig } from "drizzle-kit"
-import { config } from "dotenv"
-
-// Load environment variables from .env.local or .env
-config({ path: ".env.local" })
-config({ path: ".env" })
 
 export default defineConfig({
   schema: "./lib/db/schema",
@@ -15,4 +10,3 @@ export default defineConfig({
   verbose: true,
   strict: true,
 })
-

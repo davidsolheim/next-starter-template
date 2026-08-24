@@ -3,9 +3,6 @@ import { pgTable, text, timestamp, index, uniqueIndex } from "drizzle-orm/pg-cor
 import { membershipRole } from "./enums"
 import { organizations } from "./organizations"
 import { users } from "./users"
-import { membershipRoles } from "./membership-roles"
-import { teamMemberships } from "./team-memberships"
-import { projectMemberships } from "./project-memberships"
 
 export const memberships = pgTable("memberships", {
   id: text("id").primaryKey(),
@@ -21,7 +18,7 @@ export const memberships = pgTable("memberships", {
   orgIdx: index("idx_memberships_org_id").on(table.orgId),
 }))
 
-export const membershipsRelations = relations(memberships, ({ one, many }) => ({
+export const membershipsRelations = relations(memberships, ({ one }) => ({
   organization: one(organizations, {
     fields: [memberships.orgId],
     references: [organizations.id],
@@ -30,9 +27,6 @@ export const membershipsRelations = relations(memberships, ({ one, many }) => ({
     fields: [memberships.userId],
     references: [users.id],
   }),
-  roles: many(membershipRoles),
-  teamMemberships: many(teamMemberships),
-  projectMemberships: many(projectMemberships),
 }))
 
 export type Membership = typeof memberships.$inferSelect

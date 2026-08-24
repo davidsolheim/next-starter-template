@@ -31,6 +31,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold">Admin</h1>
+            <Link href="/admin/content" className="text-sm hover:underline">Content</Link>
+            <Link href="/admin/media" className="text-sm hover:underline">Media</Link>
             <Link href="/">
               <Button variant="outline" size="sm">
                 <Home className="w-4 h-4 mr-2" />

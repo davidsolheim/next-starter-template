@@ -15,12 +15,6 @@ export const accounts = pgTable("accounts", {
   scope: text("scope"),
   id_token: text("id_token"),
   session_state: text("session_state"),
-  // Keep legacy fields for migration compatibility
-  accountId: text("account_id"),
-  accessToken: text("access_token_legacy"),
-  refreshToken: text("refresh_token_legacy"),
-  expiresAt: timestamp("expires_at_legacy"),
-  password: text("password"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -37,4 +31,3 @@ export const accountsRelations = relations(accounts, ({ one }) => ({
 
 export type Account = typeof accounts.$inferSelect
 export type NewAccount = typeof accounts.$inferInsert
-

@@ -1,0 +1,3 @@
+setup:
+  project: next-starter-template
+  config: development

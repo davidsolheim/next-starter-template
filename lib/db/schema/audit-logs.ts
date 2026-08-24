@@ -6,7 +6,7 @@ import { users } from "./users"
 
 export const auditLogs = pgTable("audit_logs", {
   id: text("id").primaryKey(),
-  orgId: text("org_id").notNull().references(() => organizations.id, { onDelete: "cascade" }),
+  orgId: text("org_id").references(() => organizations.id, { onDelete: "cascade" }),
   actorUserId: text("actor_user_id").references(() => users.id, { onDelete: "set null" }),
   action: auditAction("action").notNull(),
   entityType: text("entity_type"),

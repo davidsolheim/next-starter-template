@@ -22,23 +22,22 @@ export default function Home() {
               <li>Drizzle ORM with Neon PostgreSQL</li>
               <li>NextAuth.js v5 authentication</li>
               <li>Resend email integration</li>
-              <li>Stripe payment integration</li>
               <li>Tailwind CSS 4 + shadcn/ui components</li>
               <li>TypeScript</li>
             </ul>
           </div>
-          <div className="flex gap-4 pt-4">
+          <div className="flex flex-wrap gap-4 pt-4">
             <Button asChild>
               <Link href="/admin">Admin Dashboard</Link>
             </Button>
             <Button variant="outline" asChild>
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Documentation
-              </a>
+              <Link href="/contact">Contact</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/privacy">Privacy</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/terms">Terms</Link>
             </Button>
           </div>
         </CardContent>

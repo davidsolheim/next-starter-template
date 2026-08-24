@@ -1,202 +1,114 @@
 # Next.js Starter Template
 
-A production-ready Next.js starter template with authentication, database, and modern tooling pre-configured.
+A production-ready Next.js starter with authentication, Neon/Drizzle, Doppler-oriented secrets, and App Router hardening.
+
+**License:** [MIT](LICENSE) © David Solheim. Public template: [github.com/davidsolheim/next-starter-template](https://github.com/davidsolheim/next-starter-template).
 
 ## Features
 
 - **Next.js 16** with App Router
-- **Drizzle ORM** with Neon PostgreSQL
-- **NextAuth.js v5** (Auth.js) - Credentials authentication with JWT sessions
-- **Resend** - Email integration for password reset and verification
-- **Stripe** - Payment processing integration
-- **Tailwind CSS 4** - Modern styling
-- **shadcn/ui** - Beautiful, accessible component library
-- **TypeScript** - Full type safety
-- **Vercel Blob Storage** - File uploads (optional)
+- **Drizzle ORM** with Neon PostgreSQL (migrations only)
+- **NextAuth.js v5** (Auth.js) — credentials + optional Resend magic link
+- **Resend** + React Email templates
+- **Tailwind CSS 4** + **shadcn/ui**
+- **TypeScript** (build fails on type errors)
+- Preview/production **site gate**
+- CMS (pages/articles, draft → publish) and **media library**
+- Contact form, privacy/terms, `llms.txt`, OG image
+- Session-gated uploads with MIME/signature checks
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
-- Node.js 18+ or Bun
-- A Neon PostgreSQL database (or any PostgreSQL database)
+- [Bun](https://bun.sh) (or Node.js 18+)
+- [Doppler CLI](https://docs.doppler.com/docs/install-cli)
+- A Neon PostgreSQL database
 - Resend account (for email)
-- Stripe account (optional, for payments)
 
 ### Installation
 
-1. Clone this repository or use it as a template:
-
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/davidsolheim/next-starter-template.git
 cd next-starter-template
-```
-
-2. Install dependencies:
-
-```bash
 bun install
-# or
-npm install
+doppler setup --project next-starter-template --config development
+bun run env:verify:doppler
 ```
 
-3. Copy the environment variables file:
+Create your own Doppler project (or copy `.env.example` into Doppler). Do not reuse someone else's Doppler/Vercel project.
+
+See [docs/DOPPLER_ENV_SETUP.md](docs/DOPPLER_ENV_SETUP.md). Key names are in `.env.example`.
+
+### Database
 
 ```bash
-cp .env.example .env.local
-```
-
-4. Fill in your environment variables in `.env.local`:
-
-```env
-DATABASE_URL=postgresql://user:password@host:port/database
-AUTH_SECRET=your-secret-key-here
-RESEND_API_KEY=your-resend-api-key
-EMAIL_FROM=noreply@yourdomain.com
-NEXT_PUBLIC_SITE_NAME="Your App Name"
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
-```
-
-5. Set up your database:
-
-```bash
-# Generate migrations
-bun run db:generate
-
-# Run migrations
 bun run db:migrate
+bun run db:seed
 ```
 
-6. Start the development server:
+Seed uses `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` (defaults: `admin@example.com` / `changeme-admin-password`). Change the password after first login.
+
+Schema policy: [docs/DATABASE_MIGRATIONS.md](docs/DATABASE_MIGRATIONS.md). Never use `db:push`.
+
+### Develop
 
 ```bash
 bun run dev
-# or
-npm run dev
 ```
 
-7. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Database Setup
-
-This template uses Drizzle ORM with Neon PostgreSQL. The database schema includes:
-
-- `users` - User accounts
-- `sessions` - Authentication sessions
-- `accounts` - OAuth accounts (if you add OAuth providers)
-- `verifications` - Email verification tokens
-
-### Database Commands
-
-```bash
-# Generate migrations from schema changes
-bun run db:generate
-
-# Run migrations
-bun run db:migrate
-
-# Push schema changes directly (development only)
-bun run db:push
-
-# Open Drizzle Studio (database GUI)
-bun run db:studio
-```
+Open [http://localhost:3000](http://localhost:3000). Sign in at `/login`.
 
 ## Authentication
 
-The template includes NextAuth.js v5 with credentials authentication. To create your first admin user, you'll need to:
+- Credentials (email + password, case-insensitive match)
+- Optional Resend magic-link when `RESEND_API_KEY` and `EMAIL_FROM` are set
+- Soft-deleted users (`users.deleted_at`) cannot authenticate
+- Admin UI is at `/admin`; unauthenticated users are sent to `/login?callbackUrl=...`
 
-1. Set up the database (see above)
-2. Create a user manually in the database or build a signup page
-
-Example user creation (you can add this to a setup script):
-
-```typescript
-import { drizzleDb } from "@/lib/db"
-import { users } from "@/lib/db/schema"
-import bcrypt from "bcryptjs"
-
-const hashedPassword = await bcrypt.hash("your-password", 10)
-await drizzleDb.insert(users).values({
-  id: crypto.randomUUID(),
-  email: "admin@example.com",
-  password: hashedPassword,
-  name: "Admin User",
-})
-```
-
-## Project Structure
+## Project structure
 
 ```
-├── app/                    # Next.js App Router
-│   ├── admin/             # Admin pages (protected)
-│   ├── api/               # API routes
-│   └── page.tsx           # Home page
-├── components/            # React components
-│   └── ui/                # shadcn/ui components
-├── lib/                   # Utility functions
-│   ├── auth.ts            # NextAuth configuration
-│   ├── db/                # Database setup
-│   │   └── schema/        # Drizzle schema files
-│   └── utils.ts           # Helper functions
-└── drizzle/               # Database migrations
+├── app/                    # App Router
+│   ├── (auth)/             # login, forgot, reset
+│   ├── admin/              # protected admin
+│   ├── api/                # Route Handlers
+│   ├── error.tsx
+│   ├── global-error.tsx
+│   └── not-found.tsx
+├── components/ui/          # shadcn/ui
+├── emails/                 # React Email templates
+├── lib/
+│   ├── auth.ts
+│   ├── api/                # json helpers, pagination, rate limit
+│   └── db/schema/          # core identity / org / files
+├── drizzle/                # versioned SQL migrations
+└── scripts/                # env verify, seed admin
 ```
 
-## Environment Variables
+## Environment variables
 
-See `.env.example` for all required environment variables.
+See `.env.example`. Required: `DATABASE_URL`, `AUTH_SECRET`.
 
-### Required
+## Scripts
 
-- `DATABASE_URL` or `NEON_DATABASE_URL` - PostgreSQL connection string
-- `AUTH_SECRET` - Secret key for NextAuth.js (generate with `openssl rand -base64 32`)
-- `RESEND_API_KEY` - Resend API key for emails
-- `EMAIL_FROM` - Email address to send from
-
-### Optional
-
-- `STRIPE_SECRET_KEY` - Stripe secret key (if using payments)
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
-- `BLOB_READ_WRITE_TOKEN` - Vercel Blob storage token (if using file uploads)
-- `NEXT_PUBLIC_SITE_NAME` - Your site name
-- `NEXT_PUBLIC_SITE_URL` - Your site URL
-- `NEXT_PUBLIC_BASE_URL` - Base URL for client-side auth (defaults to `http://localhost:3000`)
-- `AUTH_URL` - Auth base URL for server-side auth (defaults to `NEXT_PUBLIC_BASE_URL`)
-## Customization
-
-1. **Update site metadata**: Edit `app/layout.tsx` to customize your site's metadata
-2. **Add database tables**: Create new schema files in `lib/db/schema/` and export them in `lib/db/schema/index.ts`
-3. **Customize admin**: Modify `app/admin/page.tsx` to add your admin functionality
-4. **Add API routes**: Create new routes in `app/api/`
-5. **Customize styling**: Modify `app/globals.css` for theme customization
+```bash
+bun run lint
+bun run test
+bun run env:verify
+bun run db:generate
+bun run db:migrate
+bun run db:seed
+```
 
 ## Deployment
 
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Import your repository in Vercel
-3. Add your environment variables
-4. Deploy!
-
-### Other Platforms
-
-This template works with any platform that supports Next.js:
-- Netlify
-- Railway
-- Render
-- AWS Amplify
-
-Make sure to set all required environment variables in your deployment platform.
-
-## Author
-
-Created by **David Solheim**
+Import the repo in Vercel, sync Doppler configs to Preview/Production, run `db:migrate` against those databases, then deploy. Do not set `RESEND_API_KEY` in CI stubs — that enables the email provider at build time.
 
 ## License
 
-MIT
+[MIT](LICENSE) © David Solheim
 
-## Support
+## Security
 
-This is a starter template. Customize it to fit your needs!
+See [SECURITY.md](SECURITY.md). Report vulnerabilities privately; do not file public issues for credential or auth bypasses.

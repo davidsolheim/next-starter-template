@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, index, jsonb } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
 import { sessions } from "./sessions"
 import { accounts } from "./accounts"
@@ -6,19 +6,17 @@ import { memberships } from "./memberships"
 import { notifications } from "./notifications"
 import { notificationPreferences } from "./notification-preferences"
 import { auditLogs } from "./audit-logs"
-import { apiKeys } from "./api-keys"
-import { deviceSessions } from "./device-sessions"
-import { comments } from "./comments"
 import { files } from "./files"
-import { featureFlagOverrides } from "./feature-flag-overrides"
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").default(false),
+  emailVerified: timestamp("email_verified"),
   image: text("image"),
   password: text("password"),
+  capabilities: jsonb("capabilities").$type<string[]>().default([]),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
@@ -32,13 +30,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   notifications: many(notifications),
   notificationPreferences: many(notificationPreferences),
   auditLogs: many(auditLogs),
-  apiKeys: many(apiKeys),
-  deviceSessions: many(deviceSessions),
-  comments: many(comments),
   files: many(files),
-  featureFlagOverrides: many(featureFlagOverrides),
 }))
 
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
-

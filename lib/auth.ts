@@ -1,31 +1,72 @@
 import NextAuth from "next-auth"
 import { DrizzleAdapter } from "@auth/drizzle-adapter"
+import type { Adapter } from "next-auth/adapters"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { drizzleDb } from "@/lib/db"
+import ResendProvider from "next-auth/providers/resend"
+import { db } from "@/lib/db"
 import * as schema from "@/lib/db/schema"
-import { Resend } from "resend"
-import { eq } from "drizzle-orm"
+import { Resend as ResendClient } from "resend"
+import { eq, sql } from "drizzle-orm"
 import bcrypt from "bcryptjs"
+import {
+  renderResetPasswordEmail,
+  renderSignInEmail,
+  renderVerifyEmail,
+} from "@/emails/render"
 
-// Lazy initialization of Resend to avoid build-time errors
 function getResend() {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     throw new Error("RESEND_API_KEY is not set")
   }
-  return new Resend(apiKey)
+  return new ResendClient(apiKey)
 }
 
+const authAdapterSchema = {
+  usersTable: schema.users,
+  accountsTable: schema.accounts,
+  verificationTokensTable: schema.verificationTokens,
+} as unknown as Parameters<typeof DrizzleAdapter>[1]
+
+async function isAccountBlocked(
+  column: typeof schema.users.id | typeof schema.users.email,
+  value: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ deletedAt: schema.users.deletedAt })
+    .from(schema.users)
+    .where(eq(column, value))
+    .limit(1)
+
+  return Boolean(rows[0]?.deletedAt)
+}
+
+const createDrizzleAdapter = DrizzleAdapter as unknown as (
+  database: typeof db,
+  adapterSchema: typeof authAdapterSchema,
+) => Adapter
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  adapter: DrizzleAdapter(drizzleDb, {
-    schema: {
-      users: schema.users,
-      sessions: schema.sessions,
-      accounts: schema.accounts,
-      verificationTokens: schema.verificationTokens,
-    },
-  }),
+  adapter: createDrizzleAdapter(db, authAdapterSchema),
   providers: [
+    ...(process.env.RESEND_API_KEY && process.env.EMAIL_FROM
+      ? [
+          ResendProvider({
+            apiKey: process.env.RESEND_API_KEY,
+            from: process.env.EMAIL_FROM,
+            maxAge: 24 * 60 * 60,
+            async sendVerificationRequest({ identifier: email, url }) {
+              const resend = getResend()
+              await resend.emails.send({
+                from: process.env.EMAIL_FROM!,
+                to: email,
+                subject: "Sign in",
+                html: await renderSignInEmail({ url }),
+              })
+            },
+          }),
+        ]
+      : []),
     CredentialsProvider({
       name: "Credentials",
       credentials: {
@@ -37,43 +78,59 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null
         }
 
-        const user = await drizzleDb
-          .select()
-          .from(schema.users)
-          .where(eq(schema.users.email, credentials.email as string))
-          .limit(1)
+        try {
+          const email = String(credentials.email).trim().toLowerCase()
+          const user = await db
+            .select()
+            .from(schema.users)
+            .where(sql`lower(${schema.users.email}) = ${email}`)
+            .limit(1)
 
-        if (user.length === 0) {
+          if (user.length === 0) {
+            return null
+          }
+
+          const foundUser = user[0]
+
+          if (foundUser.deletedAt) {
+            return null
+          }
+
+          if (!foundUser.password) {
+            return null
+          }
+
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password as string,
+            foundUser.password,
+          )
+
+          if (!isPasswordValid) {
+            return null
+          }
+
+          return {
+            id: foundUser.id,
+            email: foundUser.email,
+            name: foundUser.name,
+            image: foundUser.image,
+          }
+        } catch (error) {
+          console.error("[auth] credentials authorize failed:", error)
           return null
-        }
-
-        const foundUser = user[0]
-
-        if (!foundUser.password) {
-          return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          foundUser.password
-        )
-
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: foundUser.id,
-          email: foundUser.email,
-          name: foundUser.name,
-          image: foundUser.image,
         }
       },
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      const email = user?.email
+      if (!email) return true
+      return !(await isAccountBlocked(schema.users.email, email))
+    },
     async session({ session, token }) {
       if (session.user && token.sub) {
+        if (await isAccountBlocked(schema.users.id, token.sub)) return session
         session.user.id = token.sub
       }
       return session
@@ -95,33 +152,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
 })
 
-// Helper function to send password reset email
 export async function sendPasswordResetEmail(email: string, token: string) {
   const baseURL = process.env.AUTH_URL || process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
   const resetUrl = `${baseURL}/reset-password?token=${token}`
   const emailFrom = process.env.EMAIL_FROM!
-  
+
   const resend = getResend()
   await resend.emails.send({
     from: emailFrom,
     to: email,
     subject: "Reset your password",
-    html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
+    html: await renderResetPasswordEmail({ url: resetUrl }),
   })
 }
 
-// Helper function to send verification email
 export async function sendVerificationEmail(email: string, url: string) {
   const emailFrom = process.env.EMAIL_FROM!
-  
+
   const resend = getResend()
   await resend.emails.send({
     from: emailFrom,
     to: email,
     subject: "Verify your email",
-    html: `<p>Click <a href="${url}">here</a> to verify your email.</p>`,
+    html: await renderVerifyEmail({ url }),
   })
 }
 
-// Export session type
 export type Session = Awaited<ReturnType<typeof auth>>

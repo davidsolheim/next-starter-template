@@ -7,9 +7,6 @@ export const sessions = pgTable("sessions", {
   sessionToken: text("session_token").notNull().unique(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   expires: timestamp("expires").notNull(),
-  // Keep legacy fields for migration compatibility
-  token: text("token"),
-  expiresAt: timestamp("expires_at"),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -29,4 +26,3 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 
 export type Session = typeof sessions.$inferSelect
 export type NewSession = typeof sessions.$inferInsert
-

@@ -1,63 +1,59 @@
-import { NextRequest, NextResponse } from "next/server"
-import { drizzleDb } from "@/lib/db"
+import { NextRequest } from "next/server"
+import { db } from "@/lib/db"
 import { users, verificationTokens } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import { sendPasswordResetEmail } from "@/lib/auth"
-import crypto from "crypto"
+import { jsonError, jsonOk, parseJson } from "@/lib/api/helpers"
+import { rateLimitRequest } from "@/lib/api/rate-limit"
+import { z } from "zod"
+
+const bodySchema = z.object({
+  email: z.string().email(),
+})
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email } = body
+    const limited = rateLimitRequest(request, "forgot-password", { limit: 5, windowMs: 60_000 })
+    if (limited) return limited
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 })
-    }
+    const parsed = await parseJson(request, bodySchema)
+    if (parsed instanceof Response) return parsed
 
-    // Find user by email
-    const userResult = await drizzleDb
+    const email = parsed.email.trim().toLowerCase()
+
+    const userResult = await db
       .select()
       .from(users)
-      .where(eq(users.email, email))
+      .where(sql`lower(${users.email}) = ${email}`)
       .limit(1)
 
-    // Always return success to prevent email enumeration
-    if (userResult.length === 0) {
-      return NextResponse.json({ success: true, message: "If an account with that email exists, a password reset link has been sent." })
+    if (userResult.length === 0 || userResult[0].deletedAt) {
+      return jsonOk({
+        success: true,
+        message: "If an account with that email exists, a password reset link has been sent.",
+      })
     }
 
-    const user = userResult[0]
-
-    // Generate reset token
-    const token = crypto.randomBytes(32).toString("hex")
+    const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "")
     const expires = new Date()
-    expires.setHours(expires.getHours() + 1) // Token expires in 1 hour
+    expires.setHours(expires.getHours() + 1)
 
-    // Delete any existing tokens for this user
-    await drizzleDb
-      .delete(verificationTokens)
-      .where(eq(verificationTokens.identifier, email))
+    await db.delete(verificationTokens).where(eq(verificationTokens.identifier, email))
 
-    // Store the token
-    await drizzleDb.insert(verificationTokens).values({
+    await db.insert(verificationTokens).values({
       identifier: email,
-      token: token,
-      expires: expires,
+      token,
+      expires,
     })
 
-    // Send password reset email
     await sendPasswordResetEmail(email, token)
 
-    return NextResponse.json({
+    return jsonOk({
       success: true,
       message: "If an account with that email exists, a password reset link has been sent.",
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to send password reset email:", error)
-    return NextResponse.json(
-      { error: "Failed to send password reset email" },
-      { status: 500 }
-    )
+    return jsonError("Failed to send password reset email", 500)
   }
 }
-

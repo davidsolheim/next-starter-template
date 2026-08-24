@@ -1,78 +1,59 @@
-import { NextRequest, NextResponse } from "next/server"
-import { drizzleDb } from "@/lib/db"
+import { NextRequest } from "next/server"
+import { db } from "@/lib/db"
 import { users, verificationTokens } from "@/lib/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, sql } from "drizzle-orm"
 import bcrypt from "bcryptjs"
+import { jsonError, jsonOk, parseJson } from "@/lib/api/helpers"
+import { rateLimitRequest } from "@/lib/api/rate-limit"
+import { z } from "zod"
+
+const bodySchema = z.object({
+  token: z.string().min(1),
+  newPassword: z.string().min(8),
+})
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { token, newPassword } = body
+    const limited = rateLimitRequest(request, "reset-password", { limit: 10, windowMs: 60_000 })
+    if (limited) return limited
 
-    if (!token || !newPassword) {
-      return NextResponse.json(
-        { error: "Token and new password are required" },
-        { status: 400 }
-      )
-    }
+    const parsed = await parseJson(request, bodySchema)
+    if (parsed instanceof Response) return parsed
 
-    if (newPassword.length < 8) {
-      return NextResponse.json(
-        { error: "Password must be at least 8 characters long" },
-        { status: 400 }
-      )
-    }
+    const { token, newPassword } = parsed
 
-    // Find the verification token
-    const tokenResult = await drizzleDb
+    const tokenResult = await db
       .select()
       .from(verificationTokens)
       .where(eq(verificationTokens.token, token))
       .limit(1)
 
     if (tokenResult.length === 0) {
-      return NextResponse.json(
-        { error: "Invalid or expired reset token" },
-        { status: 400 }
-      )
+      return jsonError("Invalid or expired reset token", 400)
     }
 
     const verificationToken = tokenResult[0]
 
-    // Check if token is expired
     if (new Date(verificationToken.expires) < new Date()) {
-      // Delete expired token
-      await drizzleDb
-        .delete(verificationTokens)
-        .where(eq(verificationTokens.token, token))
-
-      return NextResponse.json(
-        { error: "Invalid or expired reset token" },
-        { status: 400 }
-      )
+      await db.delete(verificationTokens).where(eq(verificationTokens.token, token))
+      return jsonError("Invalid or expired reset token", 400)
     }
 
-    // Find user by email (identifier)
-    const userResult = await drizzleDb
+    const email = verificationToken.identifier.toLowerCase()
+    const userResult = await db
       .select()
       .from(users)
-      .where(eq(users.email, verificationToken.identifier))
+      .where(sql`lower(${users.email}) = ${email}`)
       .limit(1)
 
-    if (userResult.length === 0) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      )
+    if (userResult.length === 0 || userResult[0].deletedAt) {
+      return jsonError("User not found", 404)
     }
 
     const user = userResult[0]
-
-    // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10)
 
-    // Update user password
-    await drizzleDb
+    await db
       .update(users)
       .set({
         password: hashedPassword,
@@ -80,21 +61,14 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(users.id, user.id))
 
-    // Delete the used token
-    await drizzleDb
-      .delete(verificationTokens)
-      .where(eq(verificationTokens.token, token))
+    await db.delete(verificationTokens).where(eq(verificationTokens.token, token))
 
-    return NextResponse.json({
+    return jsonOk({
       success: true,
       message: "Password reset successfully",
     })
-  } catch (error: any) {
+  } catch (error) {
     console.error("Failed to reset password:", error)
-    return NextResponse.json(
-      { error: "Failed to reset password" },
-      { status: 500 }
-    )
+    return jsonError("Failed to reset password", 500)
   }
 }
-

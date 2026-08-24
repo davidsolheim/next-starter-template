@@ -6,7 +6,7 @@ export default async function AdminPage() {
   const session = await auth()
 
   if (!session) {
-    redirect("/login")
+    redirect("/login?callbackUrl=/admin")
   }
 
   return (
@@ -18,7 +18,7 @@ export default async function AdminPage() {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            This is a starter template. Add your admin functionality here.
+            Signed in as {session.user?.email}. Add your admin functionality here.
           </p>
         </CardContent>
       </Card>

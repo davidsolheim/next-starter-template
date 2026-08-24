@@ -16,8 +16,10 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files
+# env files (secrets live in Doppler; .env.example is a key reference only)
 .env*
+!.env.example
+!.env.example.*
 
 # vercel
 .vercel
@@ -26,3 +28,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+.DS_Store
+
+# local upload fallback
+/public/uploads
+

@@ -1,20 +1,32 @@
 import { MetadataRoute } from "next"
+import { getCanonicalSiteUrl } from "@/lib/site-visibility"
+import { listPublishedEntries } from "@/lib/cms/queries"
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const siteUrl = getCanonicalSiteUrl()
+  const staticPaths = ["/", "/contact", "/privacy", "/terms", "/articles"]
 
-export default function sitemap(): MetadataRoute.Sitemap {
+  let cms: { url: string; lastModified: Date }[] = []
+  try {
+    const [pages, articles] = await Promise.all([
+      listPublishedEntries("page"),
+      listPublishedEntries("article"),
+    ])
+    cms = [...pages, ...articles].map((entry) => ({
+      url: `${siteUrl}${entry.routePath}`,
+      lastModified: entry.updatedAt,
+    }))
+  } catch {
+    cms = []
+  }
+
   return [
-    {
-      url: siteUrl,
+    ...staticPaths.map((path) => ({
+      url: path === "/" ? siteUrl : `${siteUrl}${path}`,
       lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 1,
-    },
-    {
-      url: `${siteUrl}/admin`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
-    },
+      changeFrequency: "weekly" as const,
+      priority: path === "/" ? 1 : 0.6,
+    })),
+    ...cms,
   ]
 }
