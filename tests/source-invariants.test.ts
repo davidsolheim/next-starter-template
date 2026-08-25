@@ -99,6 +99,15 @@ describe("source invariants", () => {
     expect(seed).toContain('console.log("Created default locale en")')
   })
 
+  test("admin home is a dashboard, not a stub", () => {
+    const page = read("app/admin/page.tsx")
+    expect(page).not.toContain("Add your admin functionality here")
+    expect(page).toContain("Drafts")
+    expect(page).toContain("Contact")
+    expect(page).toContain("Recent activity")
+    expect(page).toContain("/admin/content/")
+  })
+
   test("seed script creates a credential account without users.password", () => {
     const seed = read("scripts/seed-admin.ts")
     expect(seed).toContain("async function ensureCredentialAccount")
