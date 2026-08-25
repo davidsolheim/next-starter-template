@@ -96,11 +96,14 @@ See `.env.example`. Required: `DATABASE_URL`, `AUTH_SECRET`.
 ```bash
 bun run lint
 bun run test
+bun run audit
 bun run env:verify
 bun run db:generate
 bun run db:migrate
 bun run db:seed
 ```
+
+`bun run audit` is `bun audit --audit-level=high` (Bun 1.3: fail CI on high/critical only). See [SECURITY.md](SECURITY.md).
 
 ## Deployment
 

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { sanitizeAnalyticsProps } from "@/lib/analytics"
 import { checkMemoryRateLimit, resetMemoryRateLimits } from "@/lib/services/rate-limit"
@@ -15,6 +15,36 @@ describe("harvest invariants", () => {
     const pkg = JSON.parse(read("package.json")) as { scripts: Record<string, string>; packageManager?: string }
     expect(pkg.scripts.typecheck).toContain("tsc")
     expect(pkg.packageManager).toContain("bun")
+  })
+
+  test("CI runs bun audit after frozen install and Dependabot is additional", () => {
+    const pkg = JSON.parse(read("package.json")) as { scripts: Record<string, string> }
+    expect(pkg.scripts.audit).toContain("bun audit")
+    expect(pkg.scripts.audit).toContain("--audit-level=high")
+    expect(pkg.scripts.audit).not.toContain("--ignore")
+
+    const ci = read(".github/workflows/ci.yml")
+    expect(ci).not.toMatch(/^\s*RESEND_API_KEY:/m)
+    expect(ci).not.toMatch(/^\s*EMAIL_FROM:/m)
+    expect(ci).not.toContain("db:push")
+    expect(ci).toContain("run: bun run audit")
+    expect(ci).not.toMatch(/bun run audit[^\n]*--ignore/)
+
+    const installIdx = ci.indexOf("bun install --frozen-lockfile")
+    const auditIdx = ci.indexOf("run: bun run audit")
+    expect(installIdx).toBeGreaterThan(-1)
+    expect(auditIdx).toBeGreaterThan(installIdx)
+
+    const auditStep = ci.match(/- name: Audit dependencies\n([\s\S]*?)(?=\n      - name:|\n*$)/)
+    expect(auditStep?.[1]).toContain("run: bun run audit")
+    expect(auditStep?.[1]).not.toContain("continue-on-error")
+    expect(auditStep?.[1]).not.toContain("--ignore")
+
+    expect(existsSync(join(root, ".github/dependabot.yml"))).toBe(true)
+    const dependabot = read(".github/dependabot.yml")
+    expect(dependabot).toMatch(/package-ecosystem:\s*bun/)
+    expect(dependabot).toMatch(/package-ecosystem:\s*github-actions/)
+    expect(dependabot).not.toMatch(/auto-?merge/i)
   })
 
   test("next.config noindexes admin/api/auth and supports preview noindex", () => {
