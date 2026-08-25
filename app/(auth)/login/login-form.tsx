@@ -6,7 +6,7 @@ import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { signIn, signInMagicLink } from "@/lib/auth-client"
-import { safeCallbackUrl } from "@/lib/auth/callback-url-pure"
+import { passwordChangeRedirectUrl, safeCallbackUrl } from "@/lib/auth/callback-url-pure"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AuthShell } from "@/components/auth-shell"
@@ -40,7 +40,7 @@ export function LoginForm({ magicLinkEnabled }: { magicLinkEnabled: boolean }) {
       if (result.error) {
         setError(errorMessage(result.error, "Login failed"))
       } else if (result.data?.user?.mustChangePassword) {
-        router.push("/admin/account")
+        router.push(passwordChangeRedirectUrl(searchParams.get("callbackUrl")))
         router.refresh()
       } else {
         router.push(safeCallbackUrl(searchParams.get("callbackUrl")))

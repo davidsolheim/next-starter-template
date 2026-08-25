@@ -44,6 +44,7 @@ describe("harvest invariants", () => {
     const dependabot = read(".github/dependabot.yml")
     expect(dependabot).toMatch(/package-ecosystem:\s*bun/)
     expect(dependabot).toMatch(/package-ecosystem:\s*github-actions/)
+    expect(dependabot).toMatch(/target-branch:\s*dev/)
     expect(dependabot).not.toMatch(/auto-?merge/i)
   })
 

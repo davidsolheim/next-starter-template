@@ -2,14 +2,16 @@
 
 import type React from "react"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { changePassword, useSession } from "@/lib/auth-client"
+import { postPasswordChangeUrl } from "@/lib/auth/callback-url-pure"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
-export default function AdminAccountPage() {
+function AdminAccountForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { data: session } = useSession()
   const mustChangePassword = session?.user?.mustChangePassword === true
   const [currentPassword, setCurrentPassword] = useState("")
@@ -32,7 +34,7 @@ export default function AdminAccountPage() {
         setSuccess("Password changed successfully")
         setCurrentPassword("")
         setNewPassword("")
-        router.push("/admin")
+        router.push(postPasswordChangeUrl(searchParams.get("callbackUrl")))
         router.refresh()
       }
     } catch {
@@ -98,5 +100,13 @@ export default function AdminAccountPage() {
         </Button>
       </form>
     </div>
+  )
+}
+
+export default function AdminAccountPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8 text-sm text-muted-foreground">Loading...</div>}>
+      <AdminAccountForm />
+    </Suspense>
   )
 }

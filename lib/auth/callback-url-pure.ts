@@ -25,3 +25,23 @@ export function safeCallbackUrl(value: string | null | undefined, fallback = FAL
     return fallback
   }
 }
+
+function isAccountCallback(path: string) {
+  return path === "/admin/account" || path.startsWith("/admin/account/") || path.startsWith("/admin/account?")
+}
+
+export function passwordChangeRedirectUrl(callbackUrl: string | null | undefined) {
+  const dest = safeCallbackUrl(callbackUrl)
+  if (isAccountCallback(dest)) {
+    return "/admin/account"
+  }
+  return `/admin/account?callbackUrl=${encodeURIComponent(dest)}`
+}
+
+export function postPasswordChangeUrl(callbackUrl: string | null | undefined) {
+  const dest = safeCallbackUrl(callbackUrl)
+  if (isAccountCallback(dest)) {
+    return FALLBACK_CALLBACK_URL
+  }
+  return dest
+}

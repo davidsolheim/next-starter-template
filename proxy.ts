@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { auth, isAccountBlocked } from "@/lib/auth"
+import { safeCallbackUrl } from "@/lib/auth/callback-url-pure"
 import { passwordChangeRequiredResponse } from "@/lib/api/helpers"
 import {
   isAdminPagePath,
@@ -85,7 +86,12 @@ export async function proxy(request: NextRequest) {
 
     const mustChangePassword = session.user.mustChangePassword === true
     if (mustChangePassword && shouldRedirectForMustChangePassword(pathname)) {
-      return NextResponse.redirect(new URL("/admin/account", request.url))
+      const account = new URL("/admin/account", request.url)
+      const dest = safeCallbackUrl(`${pathname}${search}`)
+      if (dest !== "/admin/account") {
+        account.searchParams.set("callbackUrl", dest)
+      }
+      return NextResponse.redirect(account)
     }
   }
 

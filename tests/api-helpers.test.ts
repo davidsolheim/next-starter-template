@@ -14,7 +14,11 @@ import {
 } from "@/lib/auth/must-change-password-pure"
 import { resetPasswordTokenFromCtx } from "@/lib/auth/reset-password-token-pure"
 import { publicResetPasswordUrl } from "@/lib/auth/reset-password-url-pure"
-import { safeCallbackUrl } from "@/lib/auth/callback-url-pure"
+import {
+  passwordChangeRedirectUrl,
+  postPasswordChangeUrl,
+  safeCallbackUrl,
+} from "@/lib/auth/callback-url-pure"
 import { passwordChangeRequiredResponse } from "@/lib/api/helpers"
 
 describe("parseJson", () => {
@@ -112,6 +116,19 @@ describe("safeCallbackUrl", () => {
     expect(safeCallbackUrl("/\\evil.example/path")).toBe("/admin")
     expect(safeCallbackUrl("/\\\\evil.example/path")).toBe("/admin")
     expect(safeCallbackUrl("/%5Cevil.example/path")).toBe("/admin")
+  })
+
+  test("password-change redirects carry a safe callback through /admin/account", () => {
+    expect(passwordChangeRedirectUrl("/admin/content/123")).toBe(
+      "/admin/account?callbackUrl=%2Fadmin%2Fcontent%2F123",
+    )
+    expect(passwordChangeRedirectUrl("/admin")).toBe("/admin/account?callbackUrl=%2Fadmin")
+    expect(passwordChangeRedirectUrl("/admin/account")).toBe("/admin/account")
+    expect(passwordChangeRedirectUrl("//evil.example/path")).toBe("/admin/account?callbackUrl=%2Fadmin")
+    expect(postPasswordChangeUrl("/admin/content/123")).toBe("/admin/content/123")
+    expect(postPasswordChangeUrl("/admin/account")).toBe("/admin")
+    expect(postPasswordChangeUrl(null)).toBe("/admin")
+    expect(postPasswordChangeUrl("/\\evil.example/path")).toBe("/admin")
   })
 })
 
