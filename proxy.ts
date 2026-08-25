@@ -28,11 +28,15 @@ function isStaticAsset(pathname: string) {
   )
 }
 
+function isSiteGateExempt(pathname: string) {
+  return isStaticAsset(pathname) || pathname === "/api/health"
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const password = siteGatePassword()
 
-  if (isSiteGateEnabled() && password && !isStaticAsset(pathname)) {
+  if (isSiteGateEnabled() && password && !isSiteGateExempt(pathname)) {
     const hasGateAccess = await verifySiteGateCookie(
       request.cookies.get(SITE_GATE_COOKIE)?.value,
       password,
