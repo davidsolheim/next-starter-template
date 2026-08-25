@@ -47,7 +47,7 @@ async function ensureCredentialAccount(userId: string, hashedPassword: string) {
     .limit(1)
 
   if (credential[0]) {
-    return
+    return false
   }
 
   await db.insert(accounts).values({
@@ -58,6 +58,7 @@ async function ensureCredentialAccount(userId: string, hashedPassword: string) {
     providerId: "credential",
     password: hashedPassword,
   })
+  return true
 }
 
 async function main() {
@@ -87,7 +88,16 @@ async function main() {
         updatedAt: new Date(),
       })
       .where(eq(users.id, existing[0].id))
-    await ensureCredentialAccount(existing[0].id, hashedPassword)
+    const createdCredential = await ensureCredentialAccount(existing[0].id, hashedPassword)
+    if (createdCredential) {
+      await db
+        .update(users)
+        .set({
+          mustChangePassword: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, existing[0].id))
+    }
     console.log(`Admin user already exists (${email}); capabilities set to admin.`)
   } else {
     const userId = crypto.randomUUID()

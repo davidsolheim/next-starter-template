@@ -72,7 +72,9 @@ describe("source invariants", () => {
 
   test("hardcoded personal admin email is gone", () => {
     const forgot = read("app/(auth)/forgot-password/page.tsx")
+    const forgotForm = read("app/(auth)/forgot-password/forgot-password-form.tsx")
     expect(forgot).not.toContain("admin@davidsolheim.com")
+    expect(forgotForm).not.toContain("admin@davidsolheim.com")
   })
 
   test("package is MIT licensed with a LICENSE file", () => {
@@ -142,6 +144,11 @@ describe("source invariants", () => {
     expect(read("app/(auth)/login/login-form.tsx")).toContain('router.push("/admin/account")')
     expect(read("app/(auth)/login/page.tsx")).toContain("isResendConfigured")
     expect(read("app/(auth)/login/page.tsx")).toContain("magicLinkEnabled")
+    expect(read("app/(auth)/login/login-form.tsx")).toContain("magicLinkEnabled ? (")
+    expect(read("app/(auth)/forgot-password/page.tsx")).toContain("isResendConfigured")
+    expect(read("app/(auth)/forgot-password/page.tsx")).toContain("ForgotPasswordForm")
+    expect(read("app/(auth)/forgot-password/forgot-password-form.tsx")).toContain("recoveryEnabled")
+    expect(read("app/(auth)/forgot-password/forgot-password-form.tsx")).toContain("Password recovery is not configured on this site")
     expect(read("app/admin/layout.tsx")).not.toContain("SiteHeader")
     expect(read("app/admin/layout.tsx")).not.toContain("SiteFooter")
     expect(read("app/site-gate/page.tsx")).not.toContain("SiteHeader")
@@ -164,7 +171,7 @@ describe("source invariants", () => {
     expect(seed).toContain('providerId: "credential"')
     expect(seed).toContain('issuer: "local:credential"')
     expect(seed).toContain("if (credential[0])")
-    expect(seed).toMatch(/if \(credential\[0\]\) \{\s*return/)
+    expect(seed).toMatch(/if \(credential\[0\]\) \{\s*return false/)
     const userInsert = seed.match(/await db\.insert\(users\)\.values\(\{[\s\S]*?\}\)/)
     expect(userInsert?.[0]).toBeTruthy()
     expect(userInsert?.[0]).not.toContain("password")
@@ -172,6 +179,10 @@ describe("source invariants", () => {
     const existingUpdate = seed.match(/if \(existing\[0\]\) \{[\s\S]*?\.update\(users\)[\s\S]*?\.where\(eq\(users\.id, existing\[0\]\.id\)\)/)
     expect(existingUpdate?.[0]).toBeTruthy()
     expect(existingUpdate?.[0]).not.toContain("mustChangePassword")
+    expect(seed).toContain("const createdCredential = await ensureCredentialAccount")
+    expect(seed).toContain("if (createdCredential)")
+    const credentialGate = seed.match(/if \(createdCredential\) \{[\s\S]*?mustChangePassword: true[\s\S]*?\.where\(eq\(users\.id, existing\[0\]\.id\)\)/)
+    expect(credentialGate?.[0]).toBeTruthy()
   })
 
   test("account page uses changePassword client and change-password clears the flag", () => {

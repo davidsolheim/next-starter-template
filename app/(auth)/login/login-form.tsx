@@ -89,9 +89,11 @@ export function LoginForm({ magicLinkEnabled }: { magicLinkEnabled: boolean }) {
       heading="Sign in"
       description="Sign in to access the admin panel"
       footer={
-        <Link href="/forgot-password" className="text-primary hover:underline">
-          Forgot password?
-        </Link>
+        magicLinkEnabled ? (
+          <Link href="/forgot-password" className="text-primary hover:underline">
+            Forgot password?
+          </Link>
+        ) : null
       }
     >
       <form onSubmit={handleLogin} className="space-y-4">
