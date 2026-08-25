@@ -85,6 +85,7 @@ async function main() {
       .set({
         capabilities: ["admin"],
         deletedAt: null,
+        emailVerified: true,
         updatedAt: new Date(),
       })
       .where(eq(users.id, existing[0].id))

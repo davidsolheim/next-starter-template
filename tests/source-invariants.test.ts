@@ -179,6 +179,7 @@ describe("source invariants", () => {
     const existingUpdate = seed.match(/if \(existing\[0\]\) \{[\s\S]*?\.update\(users\)[\s\S]*?\.where\(eq\(users\.id, existing\[0\]\.id\)\)/)
     expect(existingUpdate?.[0]).toBeTruthy()
     expect(existingUpdate?.[0]).not.toContain("mustChangePassword")
+    expect(existingUpdate?.[0]).toContain("emailVerified: true")
     expect(seed).toContain("const createdCredential = await ensureCredentialAccount")
     expect(seed).toContain("if (createdCredential)")
     const credentialGate = seed.match(/if \(createdCredential\) \{[\s\S]*?mustChangePassword: true[\s\S]*?\.where\(eq\(users\.id, existing\[0\]\.id\)\)/)

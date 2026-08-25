@@ -2,7 +2,7 @@
 -- Data backfill: email_verified timestamp → boolean; users.password → accounts.password.
 
 ALTER TABLE "users" ADD COLUMN "email_verified_bool" boolean DEFAULT false NOT NULL;--> statement-breakpoint
-UPDATE "users" SET "email_verified_bool" = true WHERE "email_verified" IS NOT NULL;--> statement-breakpoint
+UPDATE "users" SET "email_verified_bool" = true WHERE "email_verified" IS NOT NULL OR "password" IS NOT NULL;--> statement-breakpoint
 ALTER TABLE "users" DROP COLUMN "email_verified";--> statement-breakpoint
 ALTER TABLE "users" RENAME COLUMN "email_verified_bool" TO "email_verified";--> statement-breakpoint
 
