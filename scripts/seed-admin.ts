@@ -97,6 +97,7 @@ async function main() {
       name,
       emailVerified: true,
       capabilities: ["admin"],
+      mustChangePassword: true,
     })
     await ensureCredentialAccount(userId, hashedPassword)
 

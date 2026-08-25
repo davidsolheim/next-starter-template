@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   image: text("image"),
   capabilities: jsonb("capabilities").$type<string[]>().default([]),
   deletedAt: timestamp("deleted_at"),
+  mustChangePassword: boolean("must_change_password").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({

@@ -25,7 +25,11 @@ export default function ForgotPasswordPage() {
       const result = await forgetPassword(email)
 
       if (result.error) {
-        setError(result.error.message || "Failed to send password reset email")
+        setError(
+          result.error.status === 429
+            ? "Too many requests. Please try again shortly."
+            : result.error.message || "Failed to send password reset email",
+        )
       } else {
         setSuccess(true)
       }

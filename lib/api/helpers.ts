@@ -34,6 +34,10 @@ export function jsonError(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status })
 }
 
+export function passwordChangeRequiredResponse() {
+  return jsonError("Password change required.", 403)
+}
+
 export async function parseJson<T extends z.ZodTypeAny>(
   request: Request,
   schema: T,

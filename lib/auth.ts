@@ -29,7 +29,7 @@ function emailFrom() {
   return from
 }
 
-function isResendConfigured() {
+export function isResendConfigured() {
   return Boolean(process.env.RESEND_API_KEY && process.env.EMAIL_FROM)
 }
 
@@ -139,6 +139,12 @@ export const auth = betterAuth({
       deletedAt: {
         type: "date",
         required: false,
+        input: false,
+      },
+      mustChangePassword: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
         input: false,
       },
     },

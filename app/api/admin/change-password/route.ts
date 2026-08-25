@@ -2,7 +2,7 @@ import { NextRequest } from "next/server"
 import { and, eq, ne } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
-import { accounts, sessions } from "@/lib/db/schema"
+import { accounts, sessions, users } from "@/lib/db/schema"
 import { getSession } from "@/lib/auth"
 import { jsonError, jsonOk, parseJson, requireUserId } from "@/lib/api/helpers"
 import { z } from "zod"
@@ -37,6 +37,10 @@ export async function POST(request: NextRequest) {
       return jsonError("Current password is incorrect", 400)
     }
 
+    if (parsed.newPassword === parsed.currentPassword) {
+      return jsonError("New password must be different from the current password", 400)
+    }
+
     const hashedNewPassword = await bcrypt.hash(parsed.newPassword, 10)
 
     await db
@@ -46,6 +50,14 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date(),
       })
       .where(eq(accounts.id, account.id))
+
+    await db
+      .update(users)
+      .set({
+        mustChangePassword: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, userId))
 
     const currentSession = await getSession()
     const currentToken = currentSession?.session?.token

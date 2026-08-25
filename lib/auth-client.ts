@@ -1,10 +1,19 @@
 "use client"
 
 import { createAuthClient } from "better-auth/react"
-import { magicLinkClient } from "better-auth/client/plugins"
+import { inferAdditionalFields, magicLinkClient } from "better-auth/client/plugins"
 
 export const authClient = createAuthClient({
-  plugins: [magicLinkClient()],
+  plugins: [
+    magicLinkClient(),
+    inferAdditionalFields({
+      user: {
+        mustChangePassword: {
+          type: "boolean",
+        },
+      },
+    }),
+  ],
 })
 
 export const useSession = authClient.useSession
@@ -13,6 +22,13 @@ export async function signIn(email: string, password: string) {
   return authClient.signIn.email({
     email,
     password,
+  })
+}
+
+export async function signInMagicLink(email: string, callbackURL = "/admin") {
+  return authClient.signIn.magicLink({
+    email,
+    callbackURL,
   })
 }
 
@@ -64,6 +80,7 @@ export interface User {
   id: string
   email: string
   name: string
+  mustChangePassword?: boolean
 }
 
 export interface Session {

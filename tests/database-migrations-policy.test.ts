@@ -36,6 +36,14 @@ describe("database migrations policy", () => {
     expect(read("drizzle/meta/_journal.json")).toContain("0000_core_identity")
   })
 
+  test("mustChangePassword migration is committed", () => {
+    expect(existsSync(join(root, "drizzle/0003_must_change_password.sql"))).toBe(true)
+    expect(read("drizzle/0003_must_change_password.sql")).toContain(
+      'ALTER TABLE "users" ADD COLUMN "must_change_password" boolean DEFAULT false NOT NULL',
+    )
+    expect(read("drizzle/meta/_journal.json")).toContain("0003_must_change_password")
+  })
+
   test("better auth migration is committed with password backfill", () => {
     expect(existsSync(join(root, "drizzle/0002_better_auth.sql"))).toBe(true)
     const sql = read("drizzle/0002_better_auth.sql")

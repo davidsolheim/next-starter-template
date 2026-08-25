@@ -32,6 +32,8 @@ describe("Better Auth cutover", () => {
 
     const magicLink = auth.match(/magicLink\(\{[\s\S]*?\}\)/)
     expect(magicLink?.[0]).toContain("disableSignUp: true")
+    expect(auth).toContain("mustChangePassword")
+    expect(auth).toContain("renderSignInEmail")
   })
 
   test("drizzleAdapter maps Better Auth models to plural tables for joins", () => {
@@ -57,6 +59,8 @@ describe("Better Auth cutover", () => {
     expect(proxy).toContain("isAccountBlocked(session.user.id)")
     expect(proxy).toContain('searchParams.set("callbackUrl"')
     expect(proxy).toContain('new URL("/login", request.url)')
+    expect(proxy).toContain("shouldRejectApiForMustChangePassword")
+    expect(proxy).toContain("passwordChangeRequiredResponse")
   })
 
   test("providers no longer wrap SessionProvider", () => {
