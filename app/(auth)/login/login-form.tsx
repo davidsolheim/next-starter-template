@@ -6,16 +6,10 @@ import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { signIn, signInMagicLink } from "@/lib/auth-client"
+import { safeCallbackUrl } from "@/lib/auth/callback-url-pure"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { AuthShell } from "@/components/auth-shell"
-
-function safeCallbackUrl(value: string | null) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
-    return "/admin"
-  }
-  return value
-}
 
 function errorMessage(error: { message?: string; status?: number } | null | undefined, fallback: string) {
   if (error?.status === 429) {

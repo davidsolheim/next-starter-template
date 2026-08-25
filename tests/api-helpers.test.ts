@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth/must-change-password-pure"
 import { resetPasswordTokenFromCtx } from "@/lib/auth/reset-password-token-pure"
 import { publicResetPasswordUrl } from "@/lib/auth/reset-password-url-pure"
+import { safeCallbackUrl } from "@/lib/auth/callback-url-pure"
 import { passwordChangeRequiredResponse } from "@/lib/api/helpers"
 
 describe("parseJson", () => {
@@ -94,6 +95,23 @@ describe("resetPasswordTokenFromCtx", () => {
     expect(resetPasswordTokenFromCtx({})).toBe("")
     expect(resetPasswordTokenFromCtx({ body: { token: "" }, query: { token: "" } })).toBe("")
     expect(resetPasswordTokenFromCtx({ body: null, query: null })).toBe("")
+  })
+})
+
+describe("safeCallbackUrl", () => {
+  test("allows same-origin relative paths and query strings", () => {
+    expect(safeCallbackUrl("/admin")).toBe("/admin")
+    expect(safeCallbackUrl("/admin/content?tab=pages")).toBe("/admin/content?tab=pages")
+    expect(safeCallbackUrl("/admin#top")).toBe("/admin#top")
+  })
+
+  test("rejects protocol-relative, absolute, and backslash open redirects", () => {
+    expect(safeCallbackUrl(null)).toBe("/admin")
+    expect(safeCallbackUrl("https://evil.example/path")).toBe("/admin")
+    expect(safeCallbackUrl("//evil.example/path")).toBe("/admin")
+    expect(safeCallbackUrl("/\\evil.example/path")).toBe("/admin")
+    expect(safeCallbackUrl("/\\\\evil.example/path")).toBe("/admin")
+    expect(safeCallbackUrl("/%5Cevil.example/path")).toBe("/admin")
   })
 })
 
