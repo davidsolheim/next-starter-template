@@ -12,6 +12,7 @@ import {
   shouldRedirectForMustChangePassword,
   shouldRejectApiForMustChangePassword,
 } from "@/lib/auth/must-change-password-pure"
+import { resetPasswordTokenFromCtx } from "@/lib/auth/reset-password-token-pure"
 import { passwordChangeRequiredResponse } from "@/lib/api/helpers"
 
 describe("parseJson", () => {
@@ -68,6 +69,30 @@ describe("mustChangePassword path gates", () => {
     expect(response.status).toBe(403)
     const body = await response.json()
     expect(body.error).toBe("Password change required.")
+  })
+})
+
+describe("resetPasswordTokenFromCtx", () => {
+  test("body token wins over query", () => {
+    expect(
+      resetPasswordTokenFromCtx({ body: { token: "a" }, query: { token: "b" } }),
+    ).toBe("a")
+  })
+
+  test("query token is used when body token is missing, empty, or non-string", () => {
+    expect(resetPasswordTokenFromCtx({ body: {}, query: { token: "b" } })).toBe("b")
+    expect(resetPasswordTokenFromCtx({ body: { token: "" }, query: { token: "b" } })).toBe("b")
+    expect(
+      resetPasswordTokenFromCtx({ body: { token: 1 }, query: { token: "b" } }),
+    ).toBe("b")
+    expect(resetPasswordTokenFromCtx({ query: { token: "b" } })).toBe("b")
+  })
+
+  test("non-string query and missing tokens return empty string", () => {
+    expect(resetPasswordTokenFromCtx({ query: { token: 1 } })).toBe("")
+    expect(resetPasswordTokenFromCtx({})).toBe("")
+    expect(resetPasswordTokenFromCtx({ body: { token: "" }, query: { token: "" } })).toBe("")
+    expect(resetPasswordTokenFromCtx({ body: null, query: null })).toBe("")
   })
 })
 

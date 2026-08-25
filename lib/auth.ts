@@ -2,11 +2,12 @@ import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { APIError, createAuthMiddleware } from "better-auth/api"
 import { magicLink } from "better-auth/plugins"
-import { eq, sql } from "drizzle-orm"
+import { and, eq, isNull, sql } from "drizzle-orm"
 import bcrypt from "bcryptjs"
 import { Resend as ResendClient } from "resend"
 import { db } from "@/lib/db"
 import * as schema from "@/lib/db/schema"
+import { resetPasswordTokenFromCtx } from "@/lib/auth/reset-password-token-pure"
 import {
   renderResetPasswordEmail,
   renderSignInEmail,
@@ -117,7 +118,7 @@ export const auth = betterAuth({
           mustChangePassword: false,
           updatedAt: new Date(),
         })
-        .where(eq(schema.users.id, user.id))
+        .where(and(eq(schema.users.id, user.id), isNull(schema.users.deletedAt)))
     },
     password: {
       hash: (password) => bcrypt.hash(password, 10),
@@ -169,7 +170,7 @@ export const auth = betterAuth({
       }
 
       if (ctx.path === "/reset-password") {
-        const token = typeof ctx.body?.token === "string" ? ctx.body.token : ""
+        const token = resetPasswordTokenFromCtx({ body: ctx.body, query: ctx.query })
         if (!token) return
         const rows = await db
           .select({ value: schema.verifications.value })
