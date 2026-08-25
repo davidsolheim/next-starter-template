@@ -1,9 +1,9 @@
-import { auth } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function AdminPage() {
-  const session = await auth()
+  const session = await getSession()
 
   if (!session) {
     redirect("/login?callbackUrl=/admin")

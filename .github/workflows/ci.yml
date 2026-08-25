@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # Stub values for CI — no GitHub secrets or Doppler required.
-      # Do not set RESEND_API_KEY / EMAIL_FROM here: that enables EmailProvider
-      # and fails the Next.js build without a real mail server.
+      # Do not set RESEND_API_KEY / EMAIL_FROM here: that enables the magic-link
+      # plugin and password-reset mailer, which need a real mail server.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
       AUTH_SECRET: ci-placeholder-secret-minimum-32-characters
       NEXT_PUBLIC_SITE_URL: http://localhost:3000

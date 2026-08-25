@@ -18,11 +18,12 @@ describe("source invariants", () => {
 
   test("auth client uses same-origin relative /api URLs", () => {
     const client = read("lib/auth-client.ts")
-    expect(client).toContain('fetch("/api/auth/forgot-password"')
-    expect(client).toContain('fetch("/api/auth/reset-password"')
+    expect(client).toContain("better-auth/react")
+    expect(client).toContain("createAuthClient")
     expect(client).toContain('fetch("/api/admin/change-password"')
     expect(client).not.toContain("localhost:3000")
     expect(client).not.toContain("NEXT_PUBLIC_BASE_URL")
+    expect(client).not.toContain("next-auth")
   })
 
   test("package.json pins versions and drops crypto packages", () => {
@@ -96,5 +97,18 @@ describe("source invariants", () => {
     expect(seed).toContain('console.log("Default locale already present")')
     expect(seed).toContain('console.log("Default locale en already present")')
     expect(seed).toContain('console.log("Created default locale en")')
+  })
+
+  test("seed script creates a credential account without users.password", () => {
+    const seed = read("scripts/seed-admin.ts")
+    expect(seed).toContain("async function ensureCredentialAccount")
+    expect(seed).toContain("insert(accounts)")
+    expect(seed).toContain('providerId: "credential"')
+    expect(seed).toContain('issuer: "local:credential"')
+    expect(seed).toContain("if (credential[0])")
+    expect(seed).toMatch(/if \(credential\[0\]\) \{\s*return/)
+    const userInsert = seed.match(/await db\.insert\(users\)\.values\(\{[\s\S]*?\}\)/)
+    expect(userInsert?.[0]).toBeTruthy()
+    expect(userInsert?.[0]).not.toContain("password")
   })
 })

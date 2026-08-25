@@ -20,7 +20,7 @@ export default function Home() {
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Next.js 16 with App Router</li>
               <li>Drizzle ORM with Neon PostgreSQL</li>
-              <li>NextAuth.js v5 authentication</li>
+              <li>Better Auth authentication</li>
               <li>Resend email integration</li>
               <li>Tailwind CSS 4 + shadcn/ui components</li>
               <li>TypeScript</li>

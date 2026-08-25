@@ -4,10 +4,8 @@ Update this table whenever you add a Route Handler.
 
 | Route | Auth | Notes |
 | --- | --- | --- |
-| `GET/POST /api/auth/[...all]` | Public (Auth.js) | NextAuth handlers |
-| `POST /api/auth/forgot-password` | Public + rate limit | Does not enumerate emails |
-| `POST /api/auth/reset-password` | Public + rate limit | Token must be unexpired |
-| `POST /api/admin/change-password` | Session required | Authenticated user only |
+| `GET/POST /api/auth/[...all]` | Public (Better Auth) | `toNextJsHandler` catch-all (`sign-in/email`, password reset, optional magic-link) |
+| `POST /api/admin/change-password` | Session required | Authenticated user only; bcrypt against credential account |
 | `POST /api/upload` | Session required | Local disk fallback under `public/uploads` |
 | `POST /api/site-gate` | Public | Sets HMAC cookie when `SITE_GATE_PASSWORD` matches |
 

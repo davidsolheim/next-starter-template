@@ -15,6 +15,13 @@
       "when": 1756000001000,
       "tag": "0001_cms_media_contact",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787669823497,
+      "tag": "0002_better_auth",
+      "breakpoints": true
     }
   ]
 }

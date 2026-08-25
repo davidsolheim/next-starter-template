@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth"
+import { getSession } from "@/lib/auth"
 import { checkCapability, type Capability } from "@/lib/auth/capabilities"
 import { z } from "zod"
 
 export async function getSessionUserId(): Promise<string | null> {
-  const session = await auth()
+  const session = await getSession()
   return session?.user?.id ?? null
 }
 

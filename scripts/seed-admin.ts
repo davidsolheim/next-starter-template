@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs"
-import { eq, sql } from "drizzle-orm"
+import { and, eq, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { locales, users } from "@/lib/db/schema"
+import { accounts, locales, users } from "@/lib/db/schema"
 
 async function seedDefaultLocale() {
   const existingDefault = await db
@@ -39,6 +39,27 @@ async function seedDefaultLocale() {
   console.log("Created default locale en")
 }
 
+async function ensureCredentialAccount(userId: string, hashedPassword: string) {
+  const credential = await db
+    .select({ id: accounts.id })
+    .from(accounts)
+    .where(and(eq(accounts.userId, userId), eq(accounts.providerId, "credential")))
+    .limit(1)
+
+  if (credential[0]) {
+    return
+  }
+
+  await db.insert(accounts).values({
+    id: crypto.randomUUID(),
+    userId,
+    issuer: "local:credential",
+    accountId: userId,
+    providerId: "credential",
+    password: hashedPassword,
+  })
+}
+
 async function main() {
   const email = (process.env.SEED_ADMIN_EMAIL || "admin@example.com").trim().toLowerCase()
   const password = process.env.SEED_ADMIN_PASSWORD || "changeme-admin-password"
@@ -55,6 +76,8 @@ async function main() {
     .where(sql`lower(${users.email}) = ${email}`)
     .limit(1)
 
+  const hashedPassword = await bcrypt.hash(password, 10)
+
   if (existing[0]) {
     await db
       .update(users)
@@ -64,16 +87,18 @@ async function main() {
         updatedAt: new Date(),
       })
       .where(eq(users.id, existing[0].id))
+    await ensureCredentialAccount(existing[0].id, hashedPassword)
     console.log(`Admin user already exists (${email}); capabilities set to admin.`)
   } else {
-    const hashedPassword = await bcrypt.hash(password, 10)
+    const userId = crypto.randomUUID()
     await db.insert(users).values({
-      id: crypto.randomUUID(),
+      id: userId,
       email,
       name,
-      password: hashedPassword,
+      emailVerified: true,
       capabilities: ["admin"],
     })
+    await ensureCredentialAccount(userId, hashedPassword)
 
     console.log(`Created admin user ${email}. Change the password after first login.`)
   }
