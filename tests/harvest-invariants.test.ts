@@ -26,9 +26,9 @@ describe("harvest invariants", () => {
 
   test("llms.txt and legal/contact routes exist", () => {
     expect(read("app/llms.txt/route.ts")).toContain("text/plain")
-    expect(read("app/privacy/page.tsx")).toContain("Privacy")
-    expect(read("app/terms/page.tsx")).toContain("Terms")
-    expect(read("app/contact/page.tsx")).toContain("/api/contact")
+    expect(read("app/(public)/privacy/page.tsx")).toContain("Privacy")
+    expect(read("app/(public)/terms/page.tsx")).toContain("Terms")
+    expect(read("app/(public)/contact/page.tsx")).toContain("/api/contact")
   })
 
   test("cms and media schema are committed", () => {
