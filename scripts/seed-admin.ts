@@ -1,7 +1,43 @@
 import bcrypt from "bcryptjs"
 import { eq, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
-import { users } from "@/lib/db/schema"
+import { locales, users } from "@/lib/db/schema"
+
+async function seedDefaultLocale() {
+  const existingDefault = await db
+    .select({ id: locales.id })
+    .from(locales)
+    .where(eq(locales.isDefault, true))
+    .limit(1)
+
+  if (existingDefault[0]) {
+    console.log("Default locale already present")
+    return
+  }
+
+  const existingEn = await db
+    .select({ id: locales.id })
+    .from(locales)
+    .where(eq(locales.code, "en"))
+    .limit(1)
+
+  if (existingEn[0]) {
+    await db
+      .update(locales)
+      .set({ isDefault: true })
+      .where(eq(locales.id, existingEn[0].id))
+    console.log("Default locale en already present")
+    return
+  }
+
+  await db.insert(locales).values({
+    id: crypto.randomUUID(),
+    code: "en",
+    name: "English",
+    isDefault: true,
+  })
+  console.log("Created default locale en")
+}
 
 async function main() {
   const email = (process.env.SEED_ADMIN_EMAIL || "admin@example.com").trim().toLowerCase()
@@ -29,19 +65,20 @@ async function main() {
       })
       .where(eq(users.id, existing[0].id))
     console.log(`Admin user already exists (${email}); capabilities set to admin.`)
-    return
+  } else {
+    const hashedPassword = await bcrypt.hash(password, 10)
+    await db.insert(users).values({
+      id: crypto.randomUUID(),
+      email,
+      name,
+      password: hashedPassword,
+      capabilities: ["admin"],
+    })
+
+    console.log(`Created admin user ${email}. Change the password after first login.`)
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10)
-  await db.insert(users).values({
-    id: crypto.randomUUID(),
-    email,
-    name,
-    password: hashedPassword,
-    capabilities: ["admin"],
-  })
-
-  console.log(`Created admin user ${email}. Change the password after first login.`)
+  await seedDefaultLocale()
 }
 
 main().catch((error) => {

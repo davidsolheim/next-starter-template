@@ -79,4 +79,22 @@ describe("source invariants", () => {
   test("seed script exists", () => {
     expect(existsSync(join(root, "scripts/seed-admin.ts"))).toBe(true)
   })
+
+  test("seed script upserts default en locale", () => {
+    const seed = read("scripts/seed-admin.ts")
+    expect(seed).toContain("locales")
+    expect(seed).toContain('code: "en"')
+    expect(seed).toContain('name: "English"')
+    expect(seed).toContain("isDefault: true")
+    expect(seed).toContain(".select")
+    expect(seed).toContain(".from(locales)")
+    expect(seed).toContain(".insert(locales)")
+    expect(seed).toContain(".update(locales)")
+    expect(seed).toContain("eq(locales.isDefault, true)")
+    expect(seed).toContain('eq(locales.code, "en")')
+    expect(seed).toContain("await seedDefaultLocale()")
+    expect(seed).toContain('console.log("Default locale already present")')
+    expect(seed).toContain('console.log("Default locale en already present")')
+    expect(seed).toContain('console.log("Created default locale en")')
+  })
 })
