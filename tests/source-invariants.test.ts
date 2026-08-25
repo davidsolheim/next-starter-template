@@ -186,6 +186,21 @@ describe("source invariants", () => {
     expect(changePasswordRoute).toContain("New password must be different from the current password")
   })
 
+  test("email password reset clears mustChangePassword via onPasswordReset", () => {
+    const auth = read("lib/auth.ts")
+    expect(auth).toContain("onPasswordReset")
+    const onPasswordReset = auth.match(
+      /onPasswordReset:\s*async\s*\(\{\s*user\s*\}\)\s*=>\s*\{[\s\S]*?\n    \},/,
+    )
+    expect(onPasswordReset?.[0]).toBeTruthy()
+    expect(onPasswordReset?.[0]).toContain("mustChangePassword: false")
+    expect(onPasswordReset?.[0]).toContain("eq(schema.users.id, user.id)")
+    expect(onPasswordReset?.[0]).not.toContain("hooks.before")
+    const resetBeforeHook = auth.match(/if \(ctx\.path === "\/reset-password"\) \{[\s\S]*?code: "INVALID_TOKEN"/)
+    expect(resetBeforeHook?.[0]).toBeTruthy()
+    expect(resetBeforeHook?.[0]).not.toContain("mustChangePassword")
+  })
+
   test("forgot-password and sign-in use the DB rate limiter", () => {
     expect(existsSync(join(root, "lib/api/rate-limit.ts"))).toBe(false)
     const authRoute = read("app/api/auth/[...all]/route.ts")

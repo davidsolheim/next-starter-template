@@ -29,6 +29,8 @@ describe("Better Auth cutover", () => {
 
     const emailAndPassword = auth.match(/emailAndPassword:\s*\{[\s\S]*?\n  \},/)
     expect(emailAndPassword?.[0]).toContain("disableSignUp: true")
+    expect(emailAndPassword?.[0]).toContain("onPasswordReset")
+    expect(emailAndPassword?.[0]).toContain("mustChangePassword: false")
 
     const magicLink = auth.match(/magicLink\(\{[\s\S]*?\}\)/)
     expect(magicLink?.[0]).toContain("disableSignUp: true")

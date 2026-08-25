@@ -110,6 +110,15 @@ export const auth = betterAuth({
     sendResetPassword: async ({ user, url }) => {
       await sendResetPasswordEmail({ user, url })
     },
+    onPasswordReset: async ({ user }) => {
+      await db
+        .update(schema.users)
+        .set({
+          mustChangePassword: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.users.id, user.id))
+    },
     password: {
       hash: (password) => bcrypt.hash(password, 10),
       verify: ({ hash, password }) => bcrypt.compare(password, hash),
