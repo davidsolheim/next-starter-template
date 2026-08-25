@@ -34,6 +34,11 @@ function isSiteGateExempt(pathname: string) {
   return isStaticAsset(pathname) || pathname === "/api/health"
 }
 
+function isHtmlNavigation(request: NextRequest) {
+  const accept = request.headers.get("accept") || ""
+  return request.method === "GET" && accept.includes("text/html")
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const password = siteGatePassword()
@@ -54,7 +59,7 @@ export async function proxy(request: NextRequest) {
     }
 
     if (!hasGateAccess) {
-      if (pathname.startsWith("/api/")) {
+      if (pathname.startsWith("/api/") && !isHtmlNavigation(request)) {
         return NextResponse.json({ error: "Site gate access required." }, { status: 401 })
       }
 

@@ -209,6 +209,8 @@ describe("source invariants", () => {
     expect(onPasswordReset?.[0]).toContain("isNull(schema.users.deletedAt)")
     expect(onPasswordReset?.[0]).not.toContain("hooks.before")
     expect(auth).toContain("resetPasswordTokenFromCtx")
+    expect(auth).toContain("publicResetPasswordUrl")
+    expect(auth).toContain("sendResetPassword: async ({ user, url, token })")
     const helper = read("lib/auth/reset-password-token-pure.ts")
     expect(helper).toContain("ctx.query")
     const resetBeforeHook = auth.match(/if \(ctx\.path === "\/reset-password"\) \{[\s\S]*?code: "INVALID_TOKEN"/)

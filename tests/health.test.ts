@@ -32,6 +32,8 @@ describe("GET /api/health", () => {
     expect(exempt?.[0]).toContain('pathname === "/api/health"')
     expect(proxy).toContain("isSiteGateEnabled() && password && !isSiteGateExempt(pathname)")
     expect(proxy).not.toContain("isSiteGateEnabled() && password && !isStaticAsset(pathname)")
+    expect(proxy).toContain("function isHtmlNavigation")
+    expect(proxy).toContain("pathname.startsWith(\"/api/\") && !isHtmlNavigation(request)")
   })
 
   test("health route pings the database and never includes secret values", () => {

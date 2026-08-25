@@ -8,6 +8,7 @@ import { Resend as ResendClient } from "resend"
 import { db } from "@/lib/db"
 import * as schema from "@/lib/db/schema"
 import { resetPasswordTokenFromCtx } from "@/lib/auth/reset-password-token-pure"
+import { publicResetPasswordUrl } from "@/lib/auth/reset-password-url-pure"
 import {
   renderResetPasswordEmail,
   renderSignInEmail,
@@ -68,9 +69,11 @@ async function findUserByEmail(email: string) {
 async function sendResetPasswordEmail({
   user,
   url,
+  token,
 }: {
   user: { id: string; email: string }
   url: string
+  token?: string
 }) {
   if (await isAccountBlocked(user.id)) {
     return
@@ -79,12 +82,13 @@ async function sendResetPasswordEmail({
     return
   }
 
+  const pageUrl = publicResetPasswordUrl(url, token)
   const resend = getResend()
   await resend.emails.send({
     from: emailFrom(),
     to: user.email,
     subject: "Reset your password",
-    html: await renderResetPasswordEmail({ url }),
+    html: await renderResetPasswordEmail({ url: pageUrl }),
   })
 }
 
@@ -108,8 +112,8 @@ export const auth = betterAuth({
     enabled: true,
     disableSignUp: true,
     revokeSessionsOnPasswordReset: true,
-    sendResetPassword: async ({ user, url }) => {
-      await sendResetPasswordEmail({ user, url })
+    sendResetPassword: async ({ user, url, token }) => {
+      await sendResetPasswordEmail({ user, url, token })
     },
     onPasswordReset: async ({ user }) => {
       await db

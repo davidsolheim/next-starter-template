@@ -13,6 +13,7 @@ import {
   shouldRejectApiForMustChangePassword,
 } from "@/lib/auth/must-change-password-pure"
 import { resetPasswordTokenFromCtx } from "@/lib/auth/reset-password-token-pure"
+import { publicResetPasswordUrl } from "@/lib/auth/reset-password-url-pure"
 import { passwordChangeRequiredResponse } from "@/lib/api/helpers"
 
 describe("parseJson", () => {
@@ -93,6 +94,27 @@ describe("resetPasswordTokenFromCtx", () => {
     expect(resetPasswordTokenFromCtx({})).toBe("")
     expect(resetPasswordTokenFromCtx({ body: { token: "" }, query: { token: "" } })).toBe("")
     expect(resetPasswordTokenFromCtx({ body: null, query: null })).toBe("")
+  })
+})
+
+describe("publicResetPasswordUrl", () => {
+  test("rewrites Better Auth API callback URLs to the page token query", () => {
+    expect(
+      publicResetPasswordUrl("https://example.com/api/auth/reset-password/abc123?callbackURL=/reset-password"),
+    ).toBe("https://example.com/reset-password?token=abc123")
+    expect(
+      publicResetPasswordUrl("https://example.com/api/auth/reset-password/abc123", "abc123"),
+    ).toBe("https://example.com/reset-password?token=abc123")
+    expect(
+      publicResetPasswordUrl("https://example.com/reset-password?token=abc123"),
+    ).toBe("https://example.com/reset-password?token=abc123")
+  })
+
+  test("leaves unparseable or tokenless URLs unchanged", () => {
+    expect(publicResetPasswordUrl("not-a-url")).toBe("not-a-url")
+    expect(publicResetPasswordUrl("https://example.com/api/auth/forget-password")).toBe(
+      "https://example.com/api/auth/forget-password",
+    )
   })
 })
 
