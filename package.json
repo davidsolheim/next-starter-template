@@ -95,7 +95,7 @@
     "sharp": "^0.35.3",
     "sonner": "^1.7.4",
     "swr": "2.3.8",
-    "tailwind-merge": "^2.6.0",
+    "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
     "zod": "3.25.76"
