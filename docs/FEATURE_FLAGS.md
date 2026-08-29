@@ -2,6 +2,8 @@
 
 Flags live in `lib/flags/`. Resolution is shared; **where** the DB overlay comes from depends on the caller.
 
+See also: [ADR 0001](adr/0001-starter-boundaries.md) · [gold-standard inventory](https://app.notion.com/p/3ca1027c242b81aa8457d52446138418) · clone path in [README.md](../README.md).
+
 ## Resolution (highest wins)
 
 1. Doppler kill switch `FEATURE_<KEY>=0` (exact `"0"` only) — no database
